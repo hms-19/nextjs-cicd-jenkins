@@ -16,7 +16,12 @@ pipeline {
     stage('Install Dependencies') {
       steps {
         dir("${DEPLOY_DIR}") {
-          sh 'npm install'
+          sh '''
+            node -v
+            npm -v
+            npm install
+            npm install pm2 -g
+          '''
         }
       }
     }
