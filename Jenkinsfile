@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Clone Repo') {
       steps {
-        git branch: 'main', credentialsId: '2fa0f6c0-f982-4587-b25b-ae609f6bfe5e', url: 'git@github.com:hms-19/nextjs-cicd-jenkins.git'
+        git branch: 'main',  url: 'https://github.com/hms-19/nextjs-cicd-jenkins.git'
       }
     }
 
