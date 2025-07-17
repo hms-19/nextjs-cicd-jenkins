@@ -2,34 +2,47 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'my-app/frontend'
-    TAG = "latest"
+    DEPLOY_DIR = '/var/www/nextjs-cicd-jenkins'
+    NODE_ENV = 'production'
   }
 
   stages {
-    stage('Checkout') {
+    stage('Clone') {
       steps {
-        git url: 'https://github.com/your-org/frontend-repo.git'
-      }
-    }
-
-    stage('Build & Push Docker') {
-      steps {
-        script {
-          docker.build("${IMAGE_NAME}:${TAG}").push()
+        dir("${DEPLOY_DIR}") {
+          git branch: 'main', credentialsId: '2fa0f6c0-f982-4587-b25b-ae609f6bfe5e', url: 'git@github.com:hms-19/nextjs-cicd-jenkins.git'
         }
       }
     }
 
-    stage('Deploy to EC2') {
+    stage('Install Dependencies') {
       steps {
-        sh '''
-        ssh -o StrictHostKeyChecking=no ubuntu@your-ec2-ip <<EOF
-          docker pull yourdockerhub/frontend:latest
-          docker stop frontend || true && docker rm frontend || true
-          docker run -d --name frontend -p 80:80 yourdockerhub/frontend:latest
-        EOF
-        '''
+        dir("${DEPLOY_DIR}") {
+          sh 'npm install'
+        }
+      }
+    }
+
+    stage('Build') {
+      steps {
+        dir("${DEPLOY_DIR}") {
+          sh 'npm run build'
+        }
+      }
+    }
+
+    stage('Start with PM2') {
+      steps {
+        dir("${DEPLOY_DIR}") {
+          sh '''
+            pm2 describe nextjs-cicd-jenkins > /dev/null
+            if [ $? -eq 0 ]; then
+              pm2 restart nextjs-cicd-jenkins
+            else
+              pm2 start npm --name "nextjs-cicd-jenkins" -- start
+            fi
+          '''
+        }
       }
     }
   }
