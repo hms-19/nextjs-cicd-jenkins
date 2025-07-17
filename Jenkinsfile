@@ -7,11 +7,9 @@ pipeline {
   }
 
   stages {
-    stage('Clone') {
+    stage('Clone Repo') {
       steps {
-        dir("${DEPLOY_DIR}") {
-          git branch: 'main', credentialsId: '2fa0f6c0-f982-4587-b25b-ae609f6bfe5e', url: 'git@github.com:hms-19/nextjs-cicd-jenkins.git'
-        }
+        git branch: 'main', credentialsId: '2fa0f6c0-f982-4587-b25b-ae609f6bfe5e', url: 'git@github.com:hms-19/nextjs-cicd-jenkins.git'
       }
     }
 
@@ -31,7 +29,7 @@ pipeline {
       }
     }
 
-    stage('Start with PM2') {
+    stage('Start App with PM2') {
       steps {
         dir("${DEPLOY_DIR}") {
           sh '''
