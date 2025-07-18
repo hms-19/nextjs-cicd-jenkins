@@ -15,16 +15,24 @@ pipeline {
 
     stage('Install Dependencies') {
       steps {
+        sh '''
+          echo "Checking system environment..."
+          echo "Current PATH: $PATH"
+          which node
+          which npm
+          node -v || echo "Node not found"
+          npm -v || echo "npm not found"
+        '''
         dir("${DEPLOY_DIR}") {
           sh '''
-            node -v
-            npm -v
+            echo "Running npm install..."
             npm install
-            npm install pm2 -g
+            npm install -g pm2
           '''
         }
       }
     }
+
 
     stage('Build') {
       steps {
