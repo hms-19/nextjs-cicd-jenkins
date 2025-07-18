@@ -7,53 +7,46 @@ pipeline {
   }
 
   stages {
-    stage('Clone Repo') {
+    stage('Checkout') {
       steps {
-        git branch: 'main',  url: 'https://github.com/hms-19/nextjs-cicd-jenkins.git'
+        git branch: 'main', url: 'https://github.com/hms-19/nextjs-cicd-jenkins.git'
       }
     }
 
-    stage('Install Dependencies') {
+    stage('Install & Build') {
       steps {
         sh '''
-          echo "Checking system environment..."
-          echo "Current PATH: $PATH"
-          which node
-          which npm
-          node -v || echo "Node not found"
-          npm -v || echo "npm not found"
+          echo "Checking node..."
+          node -v
+          npm -v
+          npm install
+          npm run build
         '''
-        dir("${DEPLOY_DIR}") {
-          sh '''
-            echo "Running npm install..."
-            npm install
-            npm install -g pm2
-          '''
-        }
       }
     }
 
-
-    stage('Build') {
+    stage('Deploy to /var/www') {
       steps {
-        dir("${DEPLOY_DIR}") {
-          sh 'npm run build'
-        }
+        sh '''
+          sudo rm -rf /var/www/nextjs-cicd-jenkins
+          sudo mkdir -p /var/www/nextjs-cicd-jenkins
+          sudo cp -r . /var/www/nextjs-cicd-jenkins
+          sudo chown -R jenkins:jenkins /var/www/nextjs-cicd-jenkins
+        '''
       }
     }
 
     stage('Start App with PM2') {
       steps {
-        dir("${DEPLOY_DIR}") {
-          sh '''
-            pm2 describe nextjs-cicd-jenkins > /dev/null
-            if [ $? -eq 0 ]; then
-              pm2 restart nextjs-cicd-jenkins
-            else
-              pm2 start npm --name "nextjs-cicd-jenkins" -- start
-            fi
-          '''
-        }
+        sh '''
+          cd /var/www/nextjs-cicd-jenkins
+          pm2 describe nextjs-cicd-jenkins > /dev/null
+          if [ $? -eq 0 ]; then
+            pm2 restart nextjs-cicd-jenkins
+          else
+            pm2 start npm --name "nextjs-cicd-jenkins" -- start
+          fi
+        '''
       }
     }
   }
